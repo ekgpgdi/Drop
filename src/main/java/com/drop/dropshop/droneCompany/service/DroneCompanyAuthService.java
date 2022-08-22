@@ -10,6 +10,8 @@ import com.drop.dropshop.droneCompany.security.DroneDetailsImpl;
 import com.drop.dropshop.droneCompany.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.websocket.AuthenticationException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,7 +30,8 @@ import java.util.Optional;
 public class DroneCompanyAuthService {
 
     private final JwtProvider jwtProvider;
-    private final AuthenticationManager authenticationManager;
+    @Autowired
+    @Qualifier("droneAuthenticationManagerBean") private AuthenticationManager authenticationManager;
     private final DroneCompanyRefreshTokenRepository droneCompanyRefreshTokenRepository;
 
     /**
@@ -40,7 +43,7 @@ public class DroneCompanyAuthService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginDTO.getCompanyId(), loginDTO.getCompanyPassword())
             );
-        }catch (Exception e) {
+        } catch (Exception e) {
             throw new AccessDeniedException("로그인 실패", ErrorCode.UNAUTHORIZED, "요청 받은 아이디 또는 비밀번호가 맞지 않습니다.");
         }
 
@@ -90,6 +93,11 @@ public class DroneCompanyAuthService {
 
         RefreshToken refreshTokenData = new RefreshToken(loginDTO.getCompanyId(), accessToken, refreshToken, refreshTokenExpirationAt);
 
+        droneCompanyRefreshTokenRepository.findByCompanyId(loginDTO.getCompanyId()).ifPresent(dummy -> {
+                    droneCompanyRefreshTokenRepository.deleteByCompanyId(loginDTO.getCompanyId());
+                    droneCompanyRefreshTokenRepository.flush();
+                }
+        );
         droneCompanyRefreshTokenRepository.save(refreshTokenData);
 
         result.put("accessToken", accessToken);

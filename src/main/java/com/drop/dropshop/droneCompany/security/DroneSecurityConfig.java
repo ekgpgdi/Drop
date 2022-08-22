@@ -3,25 +3,20 @@ package com.drop.dropshop.droneCompany.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-
+@Order(-1)
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -33,7 +28,7 @@ public class DroneSecurityConfig extends WebSecurityConfigurerAdapter {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
+    @Bean(name = "droneAuthenticationManagerBean")
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
         return super.authenticationManagerBean();
@@ -50,12 +45,14 @@ public class DroneSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/api/drone-companies/login").permitAll()
                 .antMatchers("/api/drone-companies/logout").permitAll()
-                .antMatchers(HttpMethod.POST, "/api/drone-companies").permitAll()
-                .antMatchers("/api/drone-companies*").hasRole("ADMIN")
-                .antMatchers("/api/drone-companies*/**").hasRole("ADMIN")
-                .antMatchers("/api/drone-models*").hasRole("ADMIN")
-                .antMatchers("/api/drone-models*/**").hasRole("ADMIN")
-                .antMatchers("/api/drone-companies/**").hasRole("DRONE_COMPANY")
+//                .antMatchers(HttpMethod.POST, "/api/drone-companies").permitAll()
+                .antMatchers("/api/drone-companies*").authenticated()
+                .antMatchers("/api/drone-companies*/**").authenticated()
+//                .antMatchers("/api/drone-companies*").hasRole("ADMIN")
+//                .antMatchers("/api/drone-companies*/**").hasRole("ADMIN")
+//                .antMatchers("/api/drone-models*").hasRole("ADMIN")
+//                .antMatchers("/api/drone-models*/**").hasRole("ADMIN")
+//                .antMatchers("/api/drone-companies/**").hasRole("DRONE_COMPANY")
                 .antMatchers("/app/drones").permitAll()
                 .anyRequest().permitAll()
                 .and()
@@ -63,5 +60,4 @@ public class DroneSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
     }
-
 }
